@@ -6,4 +6,7 @@ fetch("/config")
     basicPriceInput.value = basicPrice;
     const proPriceInput = document.querySelector('#proPrice');
     proPriceInput.value = proPrice;
-  })
+  });
+fetch('/get-subscriptions')
+  .then(r => r.json())
+  .then(console.log);

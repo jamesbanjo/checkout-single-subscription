@@ -8,7 +8,7 @@ Python 3.6 or newer required.
 
 import stripe
 import json
-import os
+import os, sys
 
 from flask import Flask, render_template, jsonify, request, send_from_directory, redirect
 from dotenv import load_dotenv, find_dotenv
@@ -71,6 +71,7 @@ def create_checkout_session():
             success_url=domain_url + '/success.html?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=domain_url + '/canceled.html',
             mode='subscription',
+            customer=os.getenv('CUSTOMER_ID'),
             # automatic_tax={'enabled': True},
             line_items=[{
                 'price': price,
@@ -81,6 +82,24 @@ def create_checkout_session():
     except Exception as e:
         return jsonify({'error': {'message': str(e)}}), 400
 
+
+@app.route('/get-subscriptions', methods=['GET'])
+def get_subscriptions():
+    customer_id = os.getenv('CUSTOMER_ID')
+    
+    try:
+        subscriptions = stripe.Subscription.list(
+            customer=customer_id,
+            status='all',
+            expand=['data.default_payment_method']
+        )
+        
+        prod_id = subscriptions['data'][0]['plan']['product']
+        plan_info = stripe.Product.retrieve(prod_id)
+        
+        return jsonify({'subscriptions':subscriptions,'plan_info':plan_info})
+    except Exception as e:
+        return jsonify(error=str(e)), 403
 
 @app.route('/customer-portal', methods=['POST'])
 def customer_portal():
